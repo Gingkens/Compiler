@@ -1,6 +1,6 @@
 #coding:utf-8
-test1 = '''
-read n; 
+test1 = '''   
+read n;
 to n do
 read x;
 if x>0 then
@@ -14,8 +14,10 @@ fi
 end
 '''
 
+#print(test1.split('\n'))
+
 test2 = '''
-n=1;
+n=1,
 while n<>0 do
 read x;
 sum=0;

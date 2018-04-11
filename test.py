@@ -37,6 +37,6 @@ relate = relation.replace(' ','')
 # print(c)
 
 # print( re.findall('.*a(?:/*)a.*','a*aaaabb') )
-word = ':=1;'
-res = re.findall('^([a-z]*.*?):=(.*)',word)
+word = 'sum=sum+x'
+res = re.findall('(^[a-z]+[a-z|0-9]*$)',word)
 print(res)

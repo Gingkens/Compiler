@@ -1,21 +1,22 @@
 #coding:utf-8
 from config import *
 from testcase import *
+from Lexical import Lexical
 import re
 
 class LittleWord:
-
-    def __init__(self):
+    def __init__(self,file):
         self.out = []
+        self.file = file
         self.funcs = [self.is_keyword,self.is_number,self.is_variable,
             self.is_operator,self.is_sentence,self.is_expression]
+        self.cur_num = 0
+        self.cur_line = ''
 
     def is_invaild(self,word):
-        res = re.findall('([0-9]+[a-z]+[0-9|a-z]*)', word)
+        res = re.findall(reg_is_invaild, word)
         if len(res) != 0:
-            print('非法标识符：' + res)
-            return True
-        return False
+            self.get_error()
 
     def is_keyword(self,word):
         if word in keyword:
@@ -30,7 +31,7 @@ class LittleWord:
             return False
     
     def is_variable(self,word):
-        res = re.findall('([a-z]+[a-z|0-9]*$)',word)
+        res = re.findall(reg_is_variable,word)
         if not res:
             return False
         return (type_code['<var>'] , word)
@@ -41,50 +42,34 @@ class LittleWord:
         return False
 
     def is_sentence(self,word):
-        res = re.findall('^([a-z]*.*?):=(.*)',word)
+        res = re.findall(reg_is_sentence,word)
         if len(res) == 0:
             return False
-
-        if len(res[0]) == 2:
-            if res[0][0] != '':
-
-                if not self.add(res[0][0]):
-                    
-                    return False
-            else:
-                if not self.add(res[0][1]):
-                    
-                    return False
-        else:
-            var = res[0][0]
-            if not self.add(var):
-                return False
-            self.out.append(( type_code[':=' ,':='] ))
-
-            experssion = res[0][1]
-            if not self.add(experssion):
-                return False
+        try:
+            self.check(res[0][0])
+            self.out.append(( type_code[':='],':=' ))
+            self.check(res[0][1])
+        except IndexError:
+            return True
 
         return True
 
     def is_expression(self,word):
-        reg = ' \*| / | \+ | - | >= | =< |=  | <> | > | <'
-        reg = reg.replace(' ','')
-        res = re.findall('(.*?)(%s)(.*)'%reg ,word)
+        res = re.findall(reg_is_expression ,word)       
         if len(res) == 0:
             return False
-        
-        exp1 = res[0][0]
-        if not self.add(exp1):
-            return False
-        operator = res[0][1]
-        self.out.append( (type_code[operator],operator) )
-        exp2 = res[0][2]
-        if not self.add(exp2):
-            return False
+        try:
+            self.check(res[0][0])
+            self.out.append(( type_code[res[0][1]],res[0][1]))
+            self.check(res[0][2])
+        except IndexError:
+            return True
         return True
 
-    def add(self,word):
+
+    def check(self,word):
+        if word == '':
+            return True
         for func in self.funcs:             
             temp = func(word)
             if temp:
@@ -93,35 +78,38 @@ class LittleWord:
                 self.out.append(temp)
                 return True
 
-        print('Syntax error!  ' + word)
-        return False
+        self.get_error()
 
-    def parse(self,words):
-    
-        for word in words:
-            word = word.replace('','')
+    def get_error(self):
+        error = Lexical(self.file,self.cur_line,self.cur_num)
+        error_info = error.get_info()
+        print(error_info)
+        exit(0)
 
-            if self.is_invaild(word):
-                return False
-
-            sub_words = word.split(';')
-            for sub in sub_words:   
-                if sub == '':
-                    continue  
-                if not self.add(sub):
-                    return False
-                
-                if len(sub_words) > 1:
-                    self.out.append(( type_code[';'] ,';'))
+    def parse(self,context):
+        
+        lines = context.split('\n')
+        for line in lines:
+            self.cur_num += 1
+            self.cur_line = line
+            if line.strip() == '':
+                continue 
+            words = line.split()
+            for word in words:
+                self.is_invaild(word)             
+                sub_words = word.split(';')
+                for sub in sub_words:     
+                    self.check(sub)                                     
+                    if len(sub_words) > 1:
+                        self.out.append(( type_code[';'] ,';'))
 
     def getList(self):
         return self.out
-    
-         
+             
 if __name__ == '__main__':
-    compiler = LittleWord()
-    print(test2.split())
-    compiler.parse(test2.split())
+    compiler = LittleWord('test1')
+    print(test1.split('\n'))
+    compiler.parse(test1)
     res = compiler.getList()
     print(res)
     
